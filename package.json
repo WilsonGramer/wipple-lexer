@@ -1,0 +1,9 @@
+{
+    "name": "wipple-lexer",
+    "private": true,
+    "type": "module",
+    "main": "src/index.ts",
+    "dependencies": {
+        "escape-string-regexp": "^5.0.0"
+    }
+}
