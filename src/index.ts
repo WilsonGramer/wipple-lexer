@@ -26,7 +26,7 @@ type Output<T> =
 /** `[start, end)` */
 export type Range = [number, number];
 
-export interface AnyToken {
+export interface TokenExtra {
     range: Range;
 }
 
@@ -37,15 +37,17 @@ export interface AnyToken {
  * elaborate the rules. This causes the IDE to show the actual token types
  * instead of revealing the rules provided to `compile()`.
  */
-export type Token<R> = R extends Record<string, Rule<unknown>>
+type ExtractToken<R> = R extends Record<string, Rule<unknown>>
     ? {
           // Skip null/undefined outputs, and completely omit rules whose
           // outputs are always skipped.
           [K in keyof R]: NonNullable<Output<R[K]>> extends never
               ? never
-              : AnyToken & { type: K; value: NonNullable<Output<R[K]>> };
+              : { type: K; value: NonNullable<Output<R[K]>> };
       }[keyof R]
     : never;
+
+export type Token<T> = T extends Tokenizer<infer R> ? ExtractToken<R> : never;
 
 /**
  * Object returned by `compile()`.
@@ -54,7 +56,7 @@ export interface Tokenizer<R extends Record<string, unknown>> {
     /**
      * Tokenize an input string.
      */
-    (input: string): IteratorObject<Token<R>>;
+    (input: string): IteratorObject<TokenExtra & ExtractToken<R>>;
 
     /**
      * The regex used to tokenize the input.
@@ -111,7 +113,7 @@ export const compile = <R extends Record<string, Rule<unknown>>>(rules: R): Toke
 
             // We need to cast here because TypeScript cannot prove that
             // `type` and `value` are related through the regex.
-            const token = { range, type, value } as Token<R>;
+            const token = { range, type, value } as TokenExtra & ExtractToken<R>;
 
             return [token];
         });
